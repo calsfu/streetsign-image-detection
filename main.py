@@ -1,11 +1,24 @@
+
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets
+from torchvision import transforms
 from torchvision.transforms import ToTensor, Lambda, Compose
+from torch.nn import ReLU
 import matplotlib.pyplot as plt
 
+
+desired_size = (32, 32)
+#resizes images to 32x32
+transform = transforms.Compose([
+    transforms.Resize(desired_size),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
+
 # Download training data from open datasets.
+#42 total classes, multiple images with different resolutions for each
 training_data = datasets.GTSRB(
     root="data",
     split="train",
@@ -17,30 +30,25 @@ test_data = datasets.GTSRB(
     root="data",
     split="test",
     download=True,
-    transform=ToTensor(),
+    transform=transform,
 )
 
-batch_size = 1
-
-# Create data loaders.
-train_dataloader = DataLoader(training_data, batch_size=batch_size)
-test_dataloader = DataLoader(test_data, batch_size=batch_size)
-
-print("Training data: ", test_dataloader)
 
 
-# Check size of data
-for X, y in train_dataloader:
-    print("Shape of X [N, C, H, W]: ", X.shape)
-    print("Shape of y: ", y.shape, y.dtype)
-    break
+BATCH_SIZE = 32
 
-#display sample data
-figure = plt.figure(figsize=(10, 8))
-cols, rows = 5, 5
-for i in range(1, cols * rows + 1):
-    idx = torch.randint(len(test_data), size=(1,)).item()
-    img, label = test_data[idx]
+figure = plt.figure(figsize=(20, 20))
+cols, rows = 16, 16
+
+# for image_path, class_label in training_data._samples:
+#     # Extract the class label from the folder name in the image_path
+    
+#     print(f"Image: {image_path}, Class Label: {class_label}")
+
+for i in range(1, 217):
+    
+    img = training_data[i*120][0][1] #gets image
+    label = training_data.__getitem__(i*120)[1] #gets labek
     figure.add_subplot(rows, cols, i)
     plt.title(label)
     plt.axis("off")
@@ -50,48 +58,84 @@ plt.show()
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Using {} device".format(device))
 
-# Define model
-# class NeuralNetwork(nn.Module):
-#     def __init__(self):
-#         super(NeuralNetwork, self).__init__()
-#         self.flatten = nn.Flatten()
-#         self.linear_relu_stack = nn.Sequential(
-#             nn.Linear(28*28, 512),
-#             nn.ReLU(),
-#             nn.Linear(512, 512),
-#             nn.ReLU(),
-#             nn.Linear(512, 10),
-#             nn.ReLU()
-#         )
-#     def forward(self, x):
-#         x = self.flatten(x)
-#         logits = self.linear_relu_stack(x)
-#         return logits
-    
-# model = NeuralNetwork().to(device)
-# print(model)
+# Turn datasets into iterables (batches)
+train_dataloader = DataLoader(training_data, # dataset to turn into iterable
+    batch_size=BATCH_SIZE, # how many samples per batch? 
+    shuffle=True # shuffle data every epoch?
+)
 
-# loss_fn = nn.CrossEntropyLoss()
-# learning_rate = 1e-3
-# optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+test_dataloader = DataLoader(test_data,
+    batch_size=BATCH_SIZE,
+    shuffle=False # don't necessarily have to shuffle the testing data
+)
 
-# def train(dataloader, model, loss_fn, optimizer):
-#     size = len(dataloader.dataset)
-#     for batch, (X, y) in enumerate(dataloader):
-#         X, y = X.to(device), y.to(device)
+# Define nn
+#Will be CNN
+class NeuralNetwork(nn.Module):
+    def __init__(self, numClasses):
+        super(NeuralNetwork, self).__init__()
+        # 2 convolutional layers Convolution creates a feature map
+        self.conv1 = nn.Conv2d(1, 32, 3, 1) #in_channels, out_channels, kernel_size, stride\
+        self.relu1 = ReLU()
+
+        self.conv2 = nn.Conv2d(32, 64, 3, 1) #Converts 32 channels to 64
+        self.relu2 = ReLU()
+        #Fully connected layer, takes inputs to the output layer
+
+        self.fc1 = nn.Linear(9216, 128) #9216 is the number of inputs
+        self.relu3 = ReLU()
+
+        self.fc2 = nn.Linear(9216, numClasses)
+        self.logSoftmax = nn.LogSoftmax(dim=1)
+        #
         
-#         # Compute prediction error
-#         pred = model(X)
-#         loss = loss_fn(pred, y)
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.relu1(x)
         
-#         # Backpropagation
-#         optimizer.zero_grad()
-#         loss.backward()
-#         optimizer.step()
+        x = self.conv2(x)
+        x = self.relu2(x)
+        
+        # Flatten the feature maps
+        x = x.view(x.size(0), -1)  # Flatten to 1D
+        
+        # Apply fully connected layers and activation functions
+        x = self.fc1(x)
+        x = self.relu3(x)
+        
+        x = self.fc2(x)
+        x = self.logSoftmax(x)
+        
+        return x
 
-#         if batch % 100 == 0:
-#             loss, current = loss.item(), batch * len(X)
-#             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+numClasses = 42
+
+model = NeuralNetwork(numClasses).to(device)
+
+
+
+loss_fn = nn.CrossEntropyLoss()
+learning_rate = 1e-3
+
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+
+def train(dataloader, model, loss_fn, optimizer):
+    size = len(dataloader.dataset)
+    for batch, (X, y) in enumerate(dataloader):
+        X, y = X.to(device), y.to(device)
+        
+        # Compute prediction error
+        pred = model(X)
+        loss = loss_fn(pred, y)
+        
+        # Backpropagation
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        if batch % 100 == 0:
+            loss, current = loss.item(), batch * len(X)
+            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
 # def test(dataloader, model):
 #     size = len(dataloader.dataset)
