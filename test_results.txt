@@ -1,0 +1,54 @@
+iteration 1: 
+NN: 
+self.conv1 = nn.Conv2d(3, 4, kernel_size=(5,5), stride=1) #in_channels, out_channels, kernel_size, stride\
+self.relu1 = ReLU()
+self.maxpool1 = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
+
+self.conv2 = nn.Conv2d(4, 8, kernel_size=(5,5), stride=1) #Converts 32 channels to 64
+self.relu2 = ReLU()
+self.maxpool2 = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
+#Fully connected layer, takes inputs to the output layer
+
+self.fc1 = nn.Linear(128, 80) 
+self.relu3 = ReLU()
+
+self.fc2 = nn.Linear(80, numClasses)
+self.logSoftmax = nn.LogSoftmax(dim=1)
+
+EPOCHS: 15
+loss_fn = nn.CrossEntropyLoss()
+learning_rate = 1e-3
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+
+Test Error: 
+ Accuracy: 49.7%, Avg loss: 0.057779
+
+itreation 2
+indepenet var: epochs 15 -> 100
+
+Test Error: 
+ Accuracy: 78.4%, Avg loss: 0.047384
+Note: Increased 6% from 40 epochs
+
+iteration 3
+indepenet var: OPtimizer: SGD -> Adam
+
+EPOCHS: 40
+
+Test Error: 
+ Accuracy: 90.6%, Avg loss: 0.043167
+
+ iteration 4
+ OPtimizer Adam -> AdamW
+ Test Error: 
+ Accuracy: 90.1%, Avg loss: 0.033695
+ No change
+
+iteration 5
+Optimizer = Adagrad
+Test Error: 
+ Accuracy: 57.6%, Avg loss: 0.051701
+
+iteration 6
+optimizer - Adam
+Pic size = 32x32

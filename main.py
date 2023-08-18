@@ -1,6 +1,7 @@
 
 import torch
-from torch import nn
+import os
+from torch import nn, flatten
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision import transforms
@@ -8,9 +9,12 @@ from torchvision.transforms import ToTensor, Lambda, Compose
 from torch.nn import ReLU
 import matplotlib.pyplot as plt
 
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+os.environ["TORCH_USE_CUDA_DSA"] = "1"
 
-desired_size = (32, 32)
-#resizes images to 32x32
+desired_size = (28, 28)
+
+#resizes images to 32x32 since images are different sizes
 transform = transforms.Compose([
     transforms.Resize(desired_size),
     transforms.ToTensor(),
@@ -23,7 +27,7 @@ training_data = datasets.GTSRB(
     root="data",
     split="train",
     download=True,
-    transform=ToTensor(),
+    transform=transform,
 )
 
 test_data = datasets.GTSRB(
@@ -75,29 +79,34 @@ class NeuralNetwork(nn.Module):
     def __init__(self, numClasses):
         super(NeuralNetwork, self).__init__()
         # 2 convolutional layers Convolution creates a feature map
-        self.conv1 = nn.Conv2d(1, 32, 3, 1) #in_channels, out_channels, kernel_size, stride\
+        self.conv1 = nn.Conv2d(3, 4, kernel_size=(5,5), stride=1) #in_channels, out_channels, kernel_size, stride\
         self.relu1 = ReLU()
+        self.maxpool1 = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
 
-        self.conv2 = nn.Conv2d(32, 64, 3, 1) #Converts 32 channels to 64
+        self.conv2 = nn.Conv2d(4, 8, kernel_size=(5,5), stride=1) #Converts 32 channels to 64
         self.relu2 = ReLU()
+        self.maxpool2 = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
         #Fully connected layer, takes inputs to the output layer
 
-        self.fc1 = nn.Linear(9216, 128) #9216 is the number of inputs
+        self.fc1 = nn.Linear(128, 80) 
         self.relu3 = ReLU()
 
-        self.fc2 = nn.Linear(9216, numClasses)
+        self.fc2 = nn.Linear(80, numClasses)
         self.logSoftmax = nn.LogSoftmax(dim=1)
+       
         #
         
     def forward(self, x):
         x = self.conv1(x)
         x = self.relu1(x)
+        x = self.maxpool1(x)
         
         x = self.conv2(x)
         x = self.relu2(x)
+        x = self.maxpool2(x)
         
         # Flatten the feature maps
-        x = x.view(x.size(0), -1)  # Flatten to 1D
+        x = flatten(x, 1)
         
         # Apply fully connected layers and activation functions
         x = self.fc1(x)
@@ -108,7 +117,7 @@ class NeuralNetwork(nn.Module):
         
         return x
 
-numClasses = 42
+numClasses = 43
 
 model = NeuralNetwork(numClasses).to(device)
 
@@ -117,7 +126,7 @@ model = NeuralNetwork(numClasses).to(device)
 loss_fn = nn.CrossEntropyLoss()
 learning_rate = 1e-3
 
-optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 def train(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
@@ -137,29 +146,26 @@ def train(dataloader, model, loss_fn, optimizer):
             loss, current = loss.item(), batch * len(X)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
-# def test(dataloader, model):
-#     size = len(dataloader.dataset)
-#     model.eval()
-#     test_loss, correct = 0, 0
-#     with torch.no_grad():
-#         for X, y in dataloader:
-#             X, y = X.to(device), y.to(device)
-#             pred = model(X)
-#             test_loss += loss_fn(pred, y).item()
-#             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
-#     test_loss /= size
-#     correct /= size
-#     print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+def test(dataloader, model):
+    size = len(dataloader.dataset)
+    model.eval()
+    test_loss, correct = 0, 0
+    with torch.no_grad():
+        for X, y in dataloader:
+            X, y = X.to(device), y.to(device)
+            pred = model(X)
+            test_loss += loss_fn(pred, y).item()
+            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+    test_loss /= size
+    correct /= size
+    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
-# epochs = 15
-# for t in range(epochs):
-#     print(f"Epoch {t+1}\n-------------------------------")
-#     train(train_dataloader, model, loss_fn, optimizer)
-#     test(test_dataloader, model)
-# print("Done!")
+epochs = 40
+for t in range(epochs):
+    print(f"Epoch {t+1}\n-------------------------------")
+    train(train_dataloader, model, loss_fn, optimizer)
+    test(test_dataloader, model)
+print("Done!")
 
-# torch.save(model.state_dict(), "data/model.pth")
-# print("Saved PyTorch Model State to model.pth")
-
-# model = NeuralNetwork()
-# model.load_state_dict(torch.load("data/model.pth"))
+torch.save(model.state_dict(), "model.pth")
+print("Saved PyTorch Model State to model.pth")
