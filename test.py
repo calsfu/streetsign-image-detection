@@ -115,7 +115,6 @@ transform = transforms.Compose([
     transforms.Resize(desired_size),
     transforms.Grayscale(num_output_channels=3),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
 training_data = datasets.GTSRB(
@@ -156,7 +155,7 @@ print(len(test_data)) #12630
 #     print(f'Predicted: "{predicted}", Actual: "{actual}"')
 
 while(True): 
-    figure = plt.figure(figsize=(20, 20))
+    figure = plt.figure(figsize=(7.5, 7.5))
     rand = random.randint(0, len(test_data))
     img = test_data[rand][0][1] #gets image
     label = test_data.__getitem__(rand)[1] #gets label
@@ -166,9 +165,10 @@ while(True):
         # input_tensor = test_data[rand][0][1].unsqueeze(0).unsqueeze(0)
         pred = model(test_data[rand][0].unsqueeze(0))
     predicted_class = torch.argmax(pred).item()
-    plt.text(2.5, 9, "Actual: " + labels[label], fontsize=24, ha='center')  # Subtitle 1
-    plt.text(2.5, 8.5, "Predicted: " + labels[predicted_class], fontsize=24, ha='center')  # Subtitle 2
     plt.imshow(img.squeeze(), cmap="gray")
+    plt.text(0, 60, "Actual: " + labels[label], fontsize=24, ha='left')  # Subtitle 1
+    plt.text(0, 65, "Predicted: " + labels[predicted_class], fontsize=24, ha='left')  # Subtitle 2
+    
     plt.show()
         
 
