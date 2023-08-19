@@ -49,6 +49,21 @@ Optimizer = Adagrad
 Test Error: 
  Accuracy: 57.6%, Avg loss: 0.051701
 
+Current issue: Gets mixed up with low pixel images: ex between 60 and 50 kph
+
+iteration 5
+res 32x32
+Test Error: 
+ Accuracy: 91.0%, Avg loss: 0.018622
+
 iteration 6
-optimizer - Adam
-Pic size = 32x32
+56x56
+Epoch 50
+-------------------------------
+loss: 0.000000  [    0/26640]
+loss: 0.000871  [ 6400/26640]
+loss: 0.000003  [12800/26640]
+loss: 0.006381  [19200/26640]
+loss: 0.000002  [25600/26640]
+Test Error: 
+ Accuracy: 92.3%, Avg loss: 0.017014

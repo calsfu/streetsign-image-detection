@@ -58,11 +58,12 @@ labels = {
     42: "End no passing veh > 3.5 tons"
 }
 
-desired_size = (28, 28)
+desired_size = (56, 56)
 
 #resizes images to 32x32 since images are different sizes
 transform = transforms.Compose([
     transforms.Resize(desired_size),
+    transforms.Grayscale(num_output_channels=3),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
@@ -82,8 +83,6 @@ test_data = datasets.GTSRB(
     download=True,
     transform=transform,
 )
-
-
 
 BATCH_SIZE = 64
 
@@ -125,21 +124,24 @@ class NeuralNetwork(nn.Module):
     def __init__(self, numClasses):
         super(NeuralNetwork, self).__init__()
         # 2 convolutional layers Convolution creates a feature map
-        self.conv1 = nn.Conv2d(3, 4, kernel_size=(5,5), stride=1) #in_channels, out_channels, kernel_size, stride\
+        self.conv1 = nn.Conv2d(3, 8, kernel_size=(5,5), stride=1) #in_channels, out_channels, kernel_size, stride\
         self.relu1 = ReLU()
         self.maxpool1 = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
 
-        self.conv2 = nn.Conv2d(4, 8, kernel_size=(5,5), stride=1) #Converts 32 channels to 64
+        self.conv2 = nn.Conv2d(8, 24, kernel_size=(5,5), stride=1) #Converts 32 channels to 64
         self.relu2 = ReLU()
         self.maxpool2 = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
         #Fully connected layer, takes inputs to the output layer
 
-        self.fc1 = nn.Linear(128, 80) 
+        self.fc1 = nn.Linear(2904, 500) 
         self.relu3 = ReLU()
 
-        self.fc2 = nn.Linear(80, numClasses)
+        self.fc2 = nn.Linear(500, 150)
+        self.relu4 = ReLU()
+
+        self.fc3 = nn.Linear(150, numClasses) 
         self.logSoftmax = nn.LogSoftmax(dim=1)
-       
+        
         #
         
     def forward(self, x):
@@ -159,6 +161,9 @@ class NeuralNetwork(nn.Module):
         x = self.relu3(x)
         
         x = self.fc2(x)
+        x = self.relu4(x)
+
+        x = self.fc3(x)
         x = self.logSoftmax(x)
         
         return x
@@ -206,7 +211,7 @@ def test(dataloader, model):
     correct /= size
     print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
-epochs = 40
+epochs = 50
 for t in range(epochs):
     print(f"Epoch {t+1}\n-------------------------------")
     train(train_dataloader, model, loss_fn, optimizer)
