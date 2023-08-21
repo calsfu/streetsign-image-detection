@@ -58,12 +58,20 @@ labels = {
     42: "End no passing veh > 3.5 tons"
 }
 
-desired_size = (56, 56)
+desired_size = (80, 80)
 
 #resizes images to 32x32 since images are different sizes
 transform = transforms.Compose([
     transforms.Resize(desired_size),
-    transforms.Grayscale(num_output_channels=3),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
+
+#randomize changes in transformation to increase accuracy
+augementation = transforms.Compose([
+    transforms.Resize(desired_size),
+    transforms.RandomRotation(degrees=15),
+    transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
@@ -74,7 +82,7 @@ training_data = datasets.GTSRB(
     root="data",
     split="train",
     download=True,
-    transform=transform,
+    transform=augementation,
 )
 
 test_data = datasets.GTSRB(
@@ -128,15 +136,15 @@ class NeuralNetwork(nn.Module):
         self.relu1 = ReLU()
         self.maxpool1 = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
 
-        self.conv2 = nn.Conv2d(8, 24, kernel_size=(5,5), stride=1) #Converts 32 channels to 64
+        self.conv2 = nn.Conv2d(8, 16, kernel_size=(5,5), stride=1) #Converts 32 channels to 64
         self.relu2 = ReLU()
         self.maxpool2 = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
         #Fully connected layer, takes inputs to the output layer
 
-        self.fc1 = nn.Linear(2904, 500) 
+        self.fc1 = nn.Linear(4624, 800) 
         self.relu3 = ReLU()
 
-        self.fc2 = nn.Linear(500, 150)
+        self.fc2 = nn.Linear(800, 150)
         self.relu4 = ReLU()
 
         self.fc3 = nn.Linear(150, numClasses) 

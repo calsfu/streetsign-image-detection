@@ -22,15 +22,16 @@ class NeuralNetwork(nn.Module):
         self.relu1 = ReLU()
         self.maxpool1 = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
 
-        self.conv2 = nn.Conv2d(8, 24, kernel_size=(5,5), stride=1) #Converts 32 channels to 64
+        self.conv2 = nn.Conv2d(8, 16, kernel_size=(5,5), stride=1) #Converts 32 channels to 64
         self.relu2 = ReLU()
         self.maxpool2 = nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
         #Fully connected layer, takes inputs to the output layer
 
-        self.fc1 = nn.Linear(2904, 500) 
+
+        self.fc1 = nn.Linear(4624, 800) 
         self.relu3 = ReLU()
 
-        self.fc2 = nn.Linear(500, 150)
+        self.fc2 = nn.Linear(800, 150)
         self.relu4 = ReLU()
 
         self.fc3 = nn.Linear(150, numClasses) 
@@ -109,7 +110,7 @@ labels = {
     42: "End no passing veh > 3.5 tons"
 }
 
-desired_size = (56, 56)
+desired_size = (80, 80)
 
 transform = transforms.Compose([
     transforms.Resize(desired_size),
@@ -166,9 +167,9 @@ while(True):
         pred = model(test_data[rand][0].unsqueeze(0))
     predicted_class = torch.argmax(pred).item()
     plt.imshow(img.squeeze(), cmap="gray")
-    plt.text(0, 60, "Actual: " + labels[label], fontsize=24, ha='left')  # Subtitle 1
-    plt.text(0, 65, "Predicted: " + labels[predicted_class], fontsize=24, ha='left')  # Subtitle 2
-    
+    plt.text(0, 85, "Actual: " + labels[label], fontsize=24, ha='left')  # Subtitle 1
+    plt.text(0, 90, "Predicted: " + labels[predicted_class], fontsize=24, ha='left')  # Subtitle 2
+    plt.subplots_adjust(top=1) 
     plt.show()
         
 
