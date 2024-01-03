@@ -1,11 +1,11 @@
-### Traffic Sign Recognition with Convolutional Neural Network (CNN)
+# Traffic Sign Recognition with Convolutional Neural Network (CNN)
 
 This repository contains a Convolutional Neural Network (CNN) implemented in PyTorch for the task of Traffic Sign Recognition. The model is trained on the German Traffic Sign Recognition Benchmark (GTSRB) dataset, which consists of images of traffic signs belonging to 43 different classes.
 Dataset
 
 The GTSRB dataset is used for training and testing the model. It contains images of traffic signs with varying resolutions. The dataset is divided into training and testing sets. The training set is augmented with random transformations to increase the model's accuracy.
 
-##Model Architecture
+## Model Architecture
 
 The CNN model consists of two convolutional layers followed by max-pooling layers. The flattened feature maps are then passed through three fully connected layers. The final layer uses the LogSoftmax activation function. The architecture is as follows:
 
@@ -22,9 +22,9 @@ The CNN model consists of two convolutional layers followed by max-pooling layer
     Fully Connected Layer (input size=150, output size=numClasses)
     LogSoftmax Activation
 
-##Training
+## Training
 
 The model is trained using the Adam optimizer with a learning rate of 1e-3. The CrossEntropyLoss is used as the loss function. Training is performed over 50 epochs, and both training and testing accuracies are printed during the training process.
-##Results
+## Results
 
 After training, the model's state is saved to a file named "model.pth."
